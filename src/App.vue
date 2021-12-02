@@ -11,7 +11,7 @@
   <div class="button-group">
     <div class="json-tip">导入JSON格式：{ data: [ { } ] }</div>
     <button @click="csvToTable" class="import">导入数据</button>
-    <button @click="tableToCsv" class="exprot">导出数据</button>
+    <button @click="exprotHandle" class="exprot">导出数据</button>
     <input type="file" ref="csvFile" @change="changeFile" hidden>
   </div>
   <table class="table">
@@ -68,9 +68,10 @@ export default defineComponent({
       {name:'孙权', book: '三国演义', gender: '男'},
     ]
     
+    /**
+     * 初始化数据
+     */
     let initData = () =>{
-      console.log(state.allfilterMap);
-      
       data.forEach(element => {
         for (let key in element) {
           if(!state.allfilterMap[key]){
@@ -99,7 +100,9 @@ export default defineComponent({
       resultData.value = data;
     }
     
-
+    /**
+     * 多条件筛选
+     */
     let filterDataFnc = () => {
       var filterKeys = Object.keys(searchInfo);
       let filterData = data.filter((item) =>{
@@ -179,8 +182,19 @@ export default defineComponent({
       
       resultData.value = filterDataFnc()
     }
+    
+    /**
+     * 导入数据
+     */
+    let exprotHandle = () =>{
 
-    let tableToCsv = () => {
+      tableToCsv(resultData.value);
+
+    }
+    /**
+     * 数据转csv
+     */
+    let tableToCsv = (data:any[]) => {
       var key:any = [];
       var title = [];
       var deleteTitle:any = [];
@@ -190,8 +204,8 @@ export default defineComponent({
        * 导出格式需要拼接成的字符串 '\""名称,"数量"\r\n"张三","23.25468946921\"';
        * 判断如果有表头，没有表头取第一条数据的对象key
        */
-      if(resultData.value.length){
-          for(var k in resultData.value[0]){
+      if(data.length){
+          for(var k in data[0]){
               if(deleteTitle.indexOf(k) < 0){
                   key.push(k);
                   title.push(k);
@@ -211,8 +225,8 @@ export default defineComponent({
        */
       csv += row + '\r\n';
 
-      if(resultData.value.length){
-          resultData.value.map(function (ele:any) {
+      if(data.length){
+          data.map(function (ele:any) {
               row = '';
               /**
                * 有表头
@@ -233,11 +247,13 @@ export default defineComponent({
       if(!csv){
           return;
       }
+
+      // 导出数据
       exportAs(csv, fileName)
       
     }
     /**
-     * 导出下载数据
+     * 导出数据下载
      */
     let exportAs =  (data:any,fileName:string) => {
       var browser = getBrowser();
@@ -276,6 +292,7 @@ export default defineComponent({
           document.body.removeChild(linkDom);
       }
     }
+
     /**
      * 判断浏览器类型
      */
@@ -295,11 +312,18 @@ export default defineComponent({
     }
 
     let csvToTable = () =>{
-      csvFile.value && csvFile.value.click()
+      csvFile.value && csvFile.value.click();
     }
 
+    /**
+     * csv 转 json 
+     */
     let changeFile = (e:any) =>{
       var file = e.target.files[0];
+      if (file.type != 'application/json') {
+        alert('请传JSON格式的文件')
+        return
+      }
       let reader= new FileReader();
       reader.readAsText(file,'utf8');
       reader.onload = (event:any) =>{
@@ -310,18 +334,20 @@ export default defineComponent({
         if(result.data) {
           data = result.data;
           searchInfo = {};
-          state.allfilterMap = {}
+          state.allfilterMap = {};
           initData();
+        } else{
+          alert('JSON数据格式不对');
         }
       }
-      e.target.value = ''
+      e.target.value = '';
     }
 
     return {
       state,
       selectItem,
       resultData,
-      tableToCsv,
+      exprotHandle,
       csvToTable,
       csvFile,
       changeFile
